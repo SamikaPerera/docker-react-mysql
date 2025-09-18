@@ -28,3 +28,4 @@ jobs:
           tags: |
             samika082/docker-react-mysql:latest
             samika082/docker-react-mysql:${{ github.sha }}
+#push
