@@ -1,7 +1,7 @@
 # ==============================================================
 # GitHub Actions workflow: OWASP Lite (Semgrep + Gitleaks)
-# - Gitleaks: secrets detection (OWASP A08)
-# - Semgrep: OWASP Top 10 SAST → uploads SARIF to Security tab
+# - Gitleaks: finds hardcoded secrets (OWASP A08)
+# - Semgrep: OWASP Top 10 SAST; exports SARIF for Security tab
 # ==============================================================
 
 name: OWASP Lite (Semgrep + Gitleaks)
@@ -17,32 +17,37 @@ permissions:
   security-events: write
 
 jobs:
-  gitleaks:  # ----------------- Secrets Scanning (A08) -----------------
+  gitleaks:  # ------------------- Secrets Scanning (A08) -------------------
     name: Secrets scan (A08)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (full history for PR diff)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # <-- ensures full commit history so Gitleaks works
 
-      # gitleaks-action v2 now requires GITHUB_TOKEN for PRs and does not use `args`
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  semgrep:   # ----------------- SAST OWASP Top 10 ----------------------
+  semgrep:   # ------------------- SAST OWASP Top 10 ------------------------
     name: SAST OWASP Top 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install and run Semgrep, emit SARIF for upload
-      - name: Run Semgrep (OWASP Top 10)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install and run Semgrep (OWASP Top 10)
         run: |
           python3 -m pip install --upgrade pip
           pip install semgrep
-          semgrep --config "p/owasp-top-ten" --sarif -o semgrep.sarif
+          semgrep --config=p/owasp-top-ten --sarif --output=semgrep.sarif
 
       - name: Upload Semgrep SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
