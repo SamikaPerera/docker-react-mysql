@@ -1,3 +1,9 @@
+# ==============================================================
+# GitHub Actions workflow: OWASP Lite (Semgrep + Gitleaks)
+# - Gitleaks: secrets detection (OWASP A08)
+# - Semgrep: OWASP Top 10 SAST → uploads SARIF to Security tab
+# ==============================================================
+
 name: OWASP Lite (Semgrep + Gitleaks)
 
 on:
@@ -11,31 +17,32 @@ permissions:
   security-events: write
 
 jobs:
-  gitleaks:  # ------------------- Secrets Scanning (A08) -------------------
+  gitleaks:  # ----------------- Secrets Scanning (A08) -----------------
     name: Secrets scan (A08)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # gitleaks-action v2 now requires GITHUB_TOKEN for PRs and does not use `args`
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
-        with:
-          # Fail the job if any secrets are found
-          args: detect --no-git -v
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  semgrep:   # ------------------- SAST OWASP Top 10 ------------------------
+  semgrep:   # ----------------- SAST OWASP Top 10 ----------------------
     name: SAST OWASP Top 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # This action runs Semgrep and WRITES a SARIF file we can upload.
+      # Install and run Semgrep, emit SARIF for upload
       - name: Run Semgrep (OWASP Top 10)
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: p/owasp-top-ten
-          sarif: semgrep.sarif
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install semgrep
+          semgrep --config "p/owasp-top-ten" --sarif -o semgrep.sarif
 
       - name: Upload Semgrep SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
