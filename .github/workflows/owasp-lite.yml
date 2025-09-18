@@ -1,7 +1,7 @@
 # ==============================================================
 # GitHub Actions workflow: OWASP Lite (Semgrep + Gitleaks)
 # - Gitleaks: secrets detection (OWASP A08)
-# - Semgrep: OWASP Top 10 SAST → uploads SARIF to Security tab
+# - Semgrep: OWASP Top 10 SAST -> uploads SARIF to Security tab
 # ==============================================================
 
 name: OWASP Lite (Semgrep + Gitleaks)
@@ -23,8 +23,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # gitleaks-action v2 now requires GITHUB_TOKEN for PRs and does not use `args`
+      # gitleaks-action v2 requires GITHUB_TOKEN for PRs; do not use `args`
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
